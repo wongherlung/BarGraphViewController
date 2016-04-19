@@ -8,26 +8,28 @@
 
 import UIKit
 
-protocol ColumnActionDelegate {
+public protocol ColumnActionDelegate {
     func selectedColumnAt(columnIndex: Int)
 }
 
-class BarGraphViewController: UIViewController,
-                              UICollectionViewDataSource,
-                              UICollectionViewDelegateFlowLayout {
-    typealias ColorTimeFraction = (color: UIColor?, percentage: Double)
+public class BarGraphViewController: UIViewController,
+                                     UICollectionViewDataSource,
+                                     UICollectionViewDelegateFlowLayout {
+    public typealias ColorTimeFraction = (color: UIColor?, percentage: Double)
     
-    enum AnimationDirection {
+    public enum AnimationDirection {
         case TopDown
         case BottomUp
         case None
     }
     
+    public var collectionView: UICollectionView!
+    
+    // Data source
     private var labels = [String]()
     private var timeRanges = [[ColorTimeFraction]]()
     
     // Collection view sizing and arrangement variables. Reasonable defaults.
-    var collectionView: UICollectionView!
     private var collectionViewFrame = CGRectZero
     private var lineLength = CGFloat.NaN
     private var labelSize = CGFloat.NaN
@@ -43,22 +45,41 @@ class BarGraphViewController: UIViewController,
     
     private var boxes = [UIView]()
     
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
     }
     
-    func setCollectionViewDetails(frame: CGRect,
-                                 lineLength: CGFloat,
-                                 labelSize: CGFloat,
-                                 lineWidth: CGFloat,
-                                 columnWidth: CGFloat,
-                                 lineSpacing: CGFloat,
-                                 labelFont: UIFont,
-                                 labelColor: UIColor,
-                                 defaultColor: UIColor,
-                                 animationDirection: AnimationDirection,
-                                 animationDuration: NSTimeInterval,
-                                 columnActionDelegate: ColumnActionDelegate?) {
+    /**
+     * Sets layout, sizing and animation details for the bar graph.
+     *
+     * - Parameter frame: The bar graph's frame. Set to `CGRectZero` if using auto layout.
+     * - Parameter lineLength: The length of each bar in the bar graph.
+     * - Parameter labelSize: The height and width of each label in the bar graph.
+     * - Parameter lineWidth: The width of each bar in the bar graph.
+     * - Parameter columnWidth: The width of each column (bar and label).
+     * - Parameter lineSpacing: The spacing between each column.
+     * - Parameter labelFont: The font used to display the labels.
+     * - Parameter labelColor: The text color of the labels.
+     * - Parameter defaultColor: The color used to fill up the time fraction if the color is not
+     * specified.
+     * - Parameter animationDirection: The direction in which the bars are to grow from.
+     * - Parameter animationDuration: The animation duration of each bar. Does not matter if
+     * `animationDirection` is `.None`.
+     * - Parameter columnActionDelegate: The delegate to react to the event of a column being
+     * selected.
+     */
+    public func setCollectionViewDetails(frame: CGRect,
+                                         lineLength: CGFloat,
+                                         labelSize: CGFloat,
+                                         lineWidth: CGFloat,
+                                         columnWidth: CGFloat,
+                                         lineSpacing: CGFloat,
+                                         labelFont: UIFont,
+                                         labelColor: UIColor,
+                                         defaultColor: UIColor,
+                                         animationDirection: AnimationDirection,
+                                         animationDuration: NSTimeInterval,
+                                         columnActionDelegate: ColumnActionDelegate?) {
         self.collectionViewFrame = frame
         self.lineLength = lineLength
         self.labelSize = labelSize
@@ -74,7 +95,16 @@ class BarGraphViewController: UIViewController,
         self.columnActionDelegate = columnActionDelegate
     }
     
-    func initializeCollectionView(timeRanges: [[ColorTimeFraction]], labels: [String]) {
+    /**
+     * Sets the data for the bar graph, and generates it with animations. Should only be called
+     * after `setCollectionViewDetails` has been called.
+     *
+     * - Parameter timeRanges: Each outer array represents one bar, and each element in the inner
+     * array represents one box in the bar graph.
+     * - Parameter labels: Labels to be displayed under each column. Cycles around if there are not
+     * enough labels for all columns.
+     */
+    public func initializeCollectionView(timeRanges: [[ColorTimeFraction]], labels: [String]) {
         self.timeRanges = timeRanges
         self.labels = labels
         
@@ -92,13 +122,15 @@ class BarGraphViewController: UIViewController,
     
     // MARK: - UICollectionViewDataSource
     
-    func collectionView(collectionView: UICollectionView,
-                        numberOfItemsInSection section: Int) -> Int {
+    public func collectionView(collectionView: UICollectionView,
+                               numberOfItemsInSection section: Int) -> Int {
         return timeRanges.count
     }
     
-    func collectionView(collectionView: UICollectionView,
-                        cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+    public func collectionView(collectionView: UICollectionView,
+                               cellForItemAtIndexPath indexPath: NSIndexPath)
+        -> UICollectionViewCell {
+        
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("patternsCell",
                                                                          forIndexPath: indexPath)
         
@@ -107,25 +139,27 @@ class BarGraphViewController: UIViewController,
         return cell
     }
     
-    func collectionView(collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                               sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+    public func collectionView(collectionView: UICollectionView,
+                               layout collectionViewLayout: UICollectionViewLayout,
+                                      sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
         return CGSize(width: columnWidth,
                       height: lineLength + labelSize)
     }
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
+    public func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
         return 1
     }
     
-    func collectionView(collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                               minimumInteritemSpacingForSectionAtIndex section: Int) -> CGFloat {
+    public func collectionView(collectionView: UICollectionView,
+                               layout collectionViewLayout: UICollectionViewLayout,
+                                      minimumInteritemSpacingForSectionAtIndex section: Int)
+        -> CGFloat {
+        
         return lineSpacing
     }
     
-    func collectionView(collectionView: UICollectionView,
-                        didSelectItemAtIndexPath indexPath: NSIndexPath) {
+    public func collectionView(collectionView: UICollectionView,
+                               didSelectItemAtIndexPath indexPath: NSIndexPath) {
         columnActionDelegate?.selectedColumnAt(indexPath.row)
     }
     
@@ -164,29 +198,20 @@ class BarGraphViewController: UIViewController,
             let rangeView = UIView(frame: keyframes.start)
             rangeView.backgroundColor = range.color ?? defaultColor
             bucketView.addSubview(rangeView)
+            
             if animationDirection != .None {
                 UIView.animateWithDuration(animationDuration, animations: {
                     rangeView.frame = keyframes.end
                 })
             }
-            /*let rangeViewFrame = CGRect(x: 0,
-                                        y: rangeViewY,
-                                        width: bucketView.frame.width,
-                                        height: rangeViewHeight)
-            let rangeView = UIView(frame: CGRect(x: 0,
-                y: totalHeight,
-                width: rangeViewFrame.width,
-                height: 0))
-            rangeView.backgroundColor = range.color ?? defaultColor
-            runningTotal += CGFloat(range.percentage)
-            bucketView.addSubview(rangeView)
-            UIView.animateWithDuration(0.5, animations: {
-                rangeView.frame = rangeViewFrame
-            })*/
         }
         return bucketView
     }
     
+    /**
+     * Creates the initial and final frames for each box in the bar graph.
+     * If the animation mode is `.None`, the initial and final frames are the same.
+     */
     private func animationKeyframes(bottomY: CGFloat,
                                     boxHeight: CGFloat,
                                     boxWidth: CGFloat,
