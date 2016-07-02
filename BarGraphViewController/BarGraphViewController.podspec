@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = "BarGraphViewController"
-  s.version = "1.0.3"
+  s.version = "1.0.4"
   s.summary = "A view controller, which generates a UICollectionView-based bar graph."
   s.description = "A view controller, which can generate an animatable bar graph."
   s.homepage = "https://github.com/acruis/BarGraphViewController"

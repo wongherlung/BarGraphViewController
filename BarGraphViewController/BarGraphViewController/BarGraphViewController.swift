@@ -1,9 +1,9 @@
 //
-//  PatternsStatisticsController.swift
-//  Zone
+//  BarGraphViewController.swift
+//  Pods
 //
 //  Created by Quoc Dat Nguyen on 3/4/16.
-//  Copyright © 2016 nus.cs3217.group8. All rights reserved.
+//
 //
 
 import UIKit
@@ -12,22 +12,36 @@ public protocol ColumnActionDelegate {
     func selectedColumnAt(columnIndex: Int)
 }
 
-public class BarGraphViewController: UIViewController,
-                                     UICollectionViewDataSource,
-                                     UICollectionViewDelegateFlowLayout {
-    public typealias ColorTimeFraction = (color: UIColor?, percentage: Double)
-    
-    public enum AnimationDirection {
-        case TopDown
-        case BottomUp
-        case None
-    }
+public protocol BoxActionDelegate {
+    /**
+     Called whenever the target of a long press changes (possibly to nothing).
+     */
+    func longPressingAt(boxIndex: NSIndexPath?)
+    /**
+     Called when a long press completes.
+     */
+    func longPressFinished()
+}
+
+public enum AnimationDirection {
+    case TopDown
+    case BottomUp
+    case None
+}
+
+public class BarGraphViewController<T>: UIViewController,
+    UICollectionViewDataSource,
+UICollectionViewDelegateFlowLayout {
+    public typealias ColorTimeFraction = (item: T?, color: UIColor?, percentage: Double)
     
     public var collectionView: UICollectionView!
     
     // Data source
     private var labels = [String]()
     private var timeRanges = [[ColorTimeFraction]]()
+    
+    // Data shown to user
+    private var timeBoxes = [[BarGraphBox<T>]]() // Maintained as parallel array to timeRanges
     
     // Collection view sizing and arrangement variables. Reasonable defaults.
     private var collectionViewFrame = CGRectZero
@@ -42,8 +56,13 @@ public class BarGraphViewController: UIViewController,
     private var animationDuration = Double.infinity
     private var animationDirection = AnimationDirection.None
     private var columnActionDelegate: ColumnActionDelegate?
+    private var boxActionDelegate: BoxActionDelegate?
     
-    private var boxes = [UIView]()
+    private var currentLongPressedIndex: NSIndexPath?
+    
+    public init() {
+        super.init(nibName: nil, bundle: nil)
+    }
     
     override public func viewDidLoad() {
         super.viewDidLoad()
@@ -79,7 +98,8 @@ public class BarGraphViewController: UIViewController,
                                          defaultColor: UIColor,
                                          animationDirection: AnimationDirection,
                                          animationDuration: NSTimeInterval,
-                                         columnActionDelegate: ColumnActionDelegate?) {
+                                         columnActionDelegate: ColumnActionDelegate?,
+                                         boxActionDelegate: BoxActionDelegate?) {
         self.collectionViewFrame = frame
         self.lineLength = lineLength
         self.labelSize = labelSize
@@ -93,6 +113,7 @@ public class BarGraphViewController: UIViewController,
         self.animationDuration = animationDuration
         
         self.columnActionDelegate = columnActionDelegate
+        self.boxActionDelegate = boxActionDelegate
     }
     
     /**
@@ -106,6 +127,8 @@ public class BarGraphViewController: UIViewController,
      */
     public func initializeCollectionView(timeRanges: [[ColorTimeFraction]], labels: [String]) {
         self.timeRanges = timeRanges
+        self.timeBoxes = [[BarGraphBox<T>]](count: timeRanges.count,
+                                            repeatedValue: [BarGraphBox<T>]())
         self.labels = labels
         
         let flowLayout = UICollectionViewFlowLayout()
@@ -116,8 +139,26 @@ public class BarGraphViewController: UIViewController,
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.backgroundColor = UIColor.clearColor()
+        setBoxAction()
         
         view.addSubview(collectionView)
+    }
+    
+    /**
+     - Returns: A 2-dimensional array of `UIView`s, each containing a colored box in the bar graph.
+     Each outer array corresponds to a column, and the inner arrays store the boxes from bottom
+     to top. In other words, each box corresponds to the `ColorTimeFraction` in the corresponding
+     index path in the `timeRanges` array used to initialize the collection view.
+     */
+    public func getTimeBoxes() -> [[BarGraphBox<T>]] {
+        return timeBoxes
+    }
+    
+    /**
+     Reverts the boxes being displayed to their original display attributes.
+     */
+    public func revertTimeBoxes() {
+        timeBoxes.flatten().forEach { timeBox in timeBox.revertAttributes() }
     }
     
     // MARK: - UICollectionViewDataSource
@@ -130,13 +171,13 @@ public class BarGraphViewController: UIViewController,
     public func collectionView(collectionView: UICollectionView,
                                cellForItemAtIndexPath indexPath: NSIndexPath)
         -> UICollectionViewCell {
-        
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("patternsCell",
-                                                                         forIndexPath: indexPath)
-        
-        cell.addSubview(createCellView(cell, slotOffset: indexPath.row))
-        
-        return cell
+            
+            let cell = collectionView.dequeueReusableCellWithReuseIdentifier("patternsCell",
+                                                                             forIndexPath: indexPath)
+            
+            cell.addSubview(createCellView(cell, slotOffset: indexPath.row))
+            
+            return cell
     }
     
     public func collectionView(collectionView: UICollectionView,
@@ -154,8 +195,8 @@ public class BarGraphViewController: UIViewController,
                                layout collectionViewLayout: UICollectionViewLayout,
                                       minimumInteritemSpacingForSectionAtIndex section: Int)
         -> CGFloat {
-        
-        return lineSpacing
+            
+            return lineSpacing
     }
     
     public func collectionView(collectionView: UICollectionView,
@@ -170,13 +211,15 @@ public class BarGraphViewController: UIViewController,
         
         let parentView = UIView(frame: CGRect(x: 0, y: 0,
             width: cell.frame.width, height: cell.frame.height))
-        parentView.addSubview(getLineView(parentView, lineData: lineData))
+        parentView.addSubview(getLineView(parentView, lineData: lineData, slotOffset: slotOffset))
         parentView.addSubview(getLabelView(parentView,
             label: labels[slotOffset % labels.count])) // Repeating labels if not enough.
         return parentView
     }
     
-    private func getLineView(parentView: UIView, lineData: [ColorTimeFraction]) -> UIView {
+    private func getLineView(parentView: UIView,
+                             lineData: [ColorTimeFraction],
+                             slotOffset: Int) -> UIView {
         let totalHeight = lineLength
         
         let bucketView = UIView(frame: CGRect(
@@ -185,7 +228,9 @@ public class BarGraphViewController: UIViewController,
             width: lineWidth,
             height: lineLength))
         
+        timeBoxes[slotOffset] = [BarGraphBox<T>]()
         var runningTotal: CGFloat = 0.0
+        
         for range in lineData {
             let rangeViewHeight = totalHeight * CGFloat(range.percentage)
             let rangeViewY = totalHeight - runningTotal * totalHeight - rangeViewHeight
@@ -195,9 +240,11 @@ public class BarGraphViewController: UIViewController,
                                                boxHeight: rangeViewHeight,
                                                boxWidth: bucketView.frame.width,
                                                boxY: rangeViewY)
-            let rangeView = UIView(frame: keyframes.start)
-            rangeView.backgroundColor = range.color ?? defaultColor
+            let rangeView = BarGraphBox<T>(frame: keyframes.start,
+                                           item: range.item,
+                                           color: range.color ?? defaultColor)
             bucketView.addSubview(rangeView)
+            timeBoxes[slotOffset].append(rangeView)
             
             if animationDirection != .None {
                 UIView.animateWithDuration(animationDuration, animations: {
@@ -238,5 +285,53 @@ public class BarGraphViewController: UIViewController,
         labelView.font = labelFont
         labelView.textColor = labelColor
         return labelView
+    }
+    
+    // MARK: - Interactions
+    
+    private func setBoxAction() {
+        let longPressRecognizer = UILongPressGestureRecognizer()
+        longPressRecognizer.addTarget(self, action: #selector(boxLongPressed(_:)))
+        collectionView.addGestureRecognizer(longPressRecognizer)
+    }
+    
+    public func boxLongPressed(longPressRecognizer: UILongPressGestureRecognizer) {
+        guard longPressRecognizer.state != .Ended else {
+            boxActionDelegate?.longPressFinished()
+            return
+        }
+        
+        let pressedBoxIndexPath = determinePressedBox(longPressRecognizer)
+        
+        guard pressedBoxIndexPath != currentLongPressedIndex else {
+            return
+        }
+        
+        print(pressedBoxIndexPath)
+        boxActionDelegate?.longPressingAt(pressedBoxIndexPath)
+        currentLongPressedIndex = pressedBoxIndexPath
+    }
+    
+    /**
+     - Returns: The index path in `timeBoxes` to the pressed box via `timeBoxes[section][row]`, or
+     `nil` if no box is pressed
+     */
+    private func determinePressedBox(longPressRecognizer: UILongPressGestureRecognizer)
+        -> NSIndexPath? {
+            guard let indexPath = collectionView
+                .indexPathForItemAtPoint(longPressRecognizer.locationInView(collectionView)) else {
+                    return nil
+            }
+            
+            let yCoordinateInCell = longPressRecognizer.locationInView(collectionView).y
+            
+            guard let pressedBox = timeBoxes[indexPath.row].enumerate().filter({ index, barGraphBox in
+                return barGraphBox.frame.minY <= yCoordinateInCell
+                    && barGraphBox.frame.maxY >= yCoordinateInCell
+            }).first else {
+                return nil
+            }
+            
+            return NSIndexPath(forRow: pressedBox.index, inSection: indexPath.row)
     }
 }

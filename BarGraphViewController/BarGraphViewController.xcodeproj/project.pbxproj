@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		AA2C13EC1CC668BB002ED933 /* BarGraphViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = AA2C13EB1CC668BB002ED933 /* BarGraphViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA2C13F41CC668D4002ED933 /* BarGraphViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2C13F31CC668D4002ED933 /* BarGraphViewController.swift */; };
+		AADBB17A1D283EF0001E5AC7 /* BarGraphBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADBB1791D283EF0001E5AC7 /* BarGraphBox.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -16,6 +17,7 @@
 		AA2C13EB1CC668BB002ED933 /* BarGraphViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BarGraphViewController.h; sourceTree = "<group>"; };
 		AA2C13ED1CC668BB002ED933 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA2C13F31CC668D4002ED933 /* BarGraphViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BarGraphViewController.swift; sourceTree = "<group>"; };
+		AADBB1791D283EF0001E5AC7 /* BarGraphBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BarGraphBox.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +52,7 @@
 			children = (
 				AA2C13EB1CC668BB002ED933 /* BarGraphViewController.h */,
 				AA2C13F31CC668D4002ED933 /* BarGraphViewController.swift */,
+				AADBB1791D283EF0001E5AC7 /* BarGraphBox.swift */,
 				AA2C13ED1CC668BB002ED933 /* Info.plist */,
 			);
 			path = BarGraphViewController;
@@ -134,6 +137,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AADBB17A1D283EF0001E5AC7 /* BarGraphBox.swift in Sources */,
 				AA2C13F41CC668D4002ED933 /* BarGraphViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -286,6 +290,7 @@
 				AA2C13F21CC668BB002ED933 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
