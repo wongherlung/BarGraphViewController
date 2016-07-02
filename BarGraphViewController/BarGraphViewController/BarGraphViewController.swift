@@ -307,7 +307,6 @@ UICollectionViewDelegateFlowLayout {
             return
         }
         
-        print(pressedBoxIndexPath)
         boxActionDelegate?.longPressingAt(pressedBoxIndexPath)
         currentLongPressedIndex = pressedBoxIndexPath
     }
