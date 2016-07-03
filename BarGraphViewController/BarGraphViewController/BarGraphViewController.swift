@@ -298,6 +298,7 @@ UICollectionViewDelegateFlowLayout {
     public func boxLongPressed(longPressRecognizer: UILongPressGestureRecognizer) {
         guard longPressRecognizer.state != .Ended else {
             boxActionDelegate?.longPressFinished()
+            currentLongPressedIndex = nil
             return
         }
         
