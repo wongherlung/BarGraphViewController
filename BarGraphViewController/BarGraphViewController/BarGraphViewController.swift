@@ -40,11 +40,14 @@ UICollectionViewDelegateFlowLayout {
     private var labels = [String]()
     private var timeRanges = [[ColorTimeFraction]]()
     
-    // Data shown to user
+    /**
+     This tracks the boxes being shown to the user.
+     */
     private var timeBoxes = [[BarGraphBox<T>]]() // Maintained as parallel array to timeRanges
     
     // Collection view sizing and arrangement variables. Reasonable defaults.
     private var collectionViewFrame = CGRectZero
+    private var singleColor = false
     private var lineLength = CGFloat.NaN
     private var labelSize = CGFloat.NaN
     private var lineWidth = CGFloat.NaN
@@ -88,6 +91,7 @@ UICollectionViewDelegateFlowLayout {
      * selected.
      */
     public func setCollectionViewDetails(frame: CGRect,
+                                         singleColor: Bool,
                                          lineLength: CGFloat,
                                          labelSize: CGFloat,
                                          lineWidth: CGFloat,
@@ -101,6 +105,7 @@ UICollectionViewDelegateFlowLayout {
                                          columnActionDelegate: ColumnActionDelegate?,
                                          boxActionDelegate: BoxActionDelegate?) {
         self.collectionViewFrame = frame
+        self.singleColor = singleColor
         self.lineLength = lineLength
         self.labelSize = labelSize
         self.lineWidth = lineWidth
@@ -144,6 +149,22 @@ UICollectionViewDelegateFlowLayout {
         view.addSubview(collectionView)
     }
     
+    public func resetData(timeRanges: [[ColorTimeFraction]], animated: Bool) {
+        self.timeRanges = timeRanges
+        
+        if singleColor && animated {
+            self.timeBoxes.enumerate().forEach { bucketIndex, timeBucket in
+                timeBucket.forEach { barGraphBox in
+                    barGraphBox.animateToPercentage(timeRanges[bucketIndex].first?.percentage ?? 0)
+                }
+            }
+        } else {
+            self.timeBoxes = [[BarGraphBox<T>]](count: timeRanges.count,
+                                                repeatedValue: [BarGraphBox<T>]())
+            collectionView.reloadData()
+        }
+    }
+    
     /**
      - Returns: A 2-dimensional array of `UIView`s, each containing a colored box in the bar graph.
      Each outer array corresponds to a column, and the inner arrays store the boxes from bottom
@@ -172,10 +193,11 @@ UICollectionViewDelegateFlowLayout {
                                cellForItemAtIndexPath indexPath: NSIndexPath)
         -> UICollectionViewCell {
             
-            let cell = collectionView.dequeueReusableCellWithReuseIdentifier("patternsCell",
-                                                                             forIndexPath: indexPath)
+            let cell
+                = collectionView.dequeueReusableCellWithReuseIdentifier("patternsCell",
+                                                                        forIndexPath: indexPath)
             
-            cell.addSubview(createCellView(cell, slotOffset: indexPath.row))
+            cell.backgroundView = createCellView(cell, slotOffset: indexPath.row)
             
             return cell
     }
@@ -220,13 +242,13 @@ UICollectionViewDelegateFlowLayout {
     private func getLineView(parentView: UIView,
                              lineData: [ColorTimeFraction],
                              slotOffset: Int) -> UIView {
-        let totalHeight = lineLength
+        let totalHeight = lineLength // For clarity
         
         let bucketView = UIView(frame: CGRect(
             x: (parentView.frame.width - lineWidth) / 2,
             y: 0,
             width: lineWidth,
-            height: lineLength))
+            height: totalHeight))
         
         timeBoxes[slotOffset] = [BarGraphBox<T>]()
         var runningTotal: CGFloat = 0.0
@@ -242,7 +264,9 @@ UICollectionViewDelegateFlowLayout {
                                                boxY: rangeViewY)
             let rangeView = BarGraphBox<T>(frame: keyframes.start,
                                            item: range.item,
-                                           color: range.color ?? defaultColor)
+                                           color: range.color ?? defaultColor,
+                                           maxHeight: totalHeight,
+                                           animationDuration: animationDuration)
             bucketView.addSubview(rangeView)
             timeBoxes[slotOffset].append(rangeView)
             
