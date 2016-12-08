@@ -1,0 +1,13 @@
+{
+  'version': 0,
+  'case-sensitive': 'false',
+  'roots': [{
+    'type': 'directory',
+    'name': '/Users/wongherlung/Projects/BarGraphViewController/BarGraphViewController/Build/Intermediates/SwiftMigration/BarGraphViewController/Products/Debug-iphonesimulator/BarGraphViewController.framework/Modules'
+    'contents': [{
+      'type': 'file',
+      'name': 'module.modulemap',
+      'external-contents': '/Users/wongherlung/Projects/BarGraphViewController/BarGraphViewController/Build/Intermediates/SwiftMigration/BarGraphViewController/Intermediates/BarGraphViewController.build/Debug-iphonesimulator/BarGraphViewController.build/unextended-module.modulemap',
+    }]
+  }]
+}

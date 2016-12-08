@@ -1,0 +1,10 @@
+framework module BarGraphViewController {
+  umbrella header "BarGraphViewController.h"
+
+  export *
+  module * { export * }
+}
+
+module BarGraphViewController.__Swift {
+    exclude header "BarGraphViewController-Swift.h"
+}

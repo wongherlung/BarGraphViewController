@@ -1,0 +1,5 @@
+version: "Apple Swift version 3.0.1 (swiftlang-800.0.58.6 clang-800.0.42.1)"
+options: "1cd5a2856904edd73f81fe94d396aad3"
+build_time: [534488937, 607704000]
+inputs:
+  "/Users/wongherlung/Projects/BarGraphViewController/BarGraphViewController/BarGraphViewController/BarGraphViewController.swift": [534482729, 0]
